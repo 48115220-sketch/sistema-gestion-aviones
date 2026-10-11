@@ -1,4 +1,4 @@
-﻿package com.escuela.admin_service.controller;
+package com.escuela.admin_service.controller;
 
 import com.escuela.admin_service.dto.PersonalAltaDTO;
 import com.escuela.admin_service.dto.PersonalDTO;

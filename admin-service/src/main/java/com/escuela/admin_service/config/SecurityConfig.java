@@ -1,4 +1,4 @@
-﻿package com.escuela.admin_service.config;
+package com.escuela.admin_service.config;
 
 import com.escuela.admin_service.security.JwtFilter;
 import jakarta.servlet.http.HttpServletResponse;

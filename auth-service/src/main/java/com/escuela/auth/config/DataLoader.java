@@ -1,4 +1,4 @@
-﻿package com.escuela.auth.config;
+package com.escuela.auth.config;
 
 import com.escuela.auth.model.Usuario;
 import com.escuela.auth.repository.UsuarioRepository;
