@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class JwtService {
@@ -22,9 +23,13 @@ public class JwtService {
         return Keys.hmacShaKeyFor(claveSecreta.getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generarToken(String nombreUsuario) {
+    public String generarToken(String nombreUsuario, String rol) {
+        String rolFormateado = (rol != null && !rol.startsWith("ROLE_")) ? "ROLE_" + rol : rol;
+        if (rolFormateado == null) rolFormateado = "ROLE_USER";
+
         return Jwts.builder()
                 .setSubject(nombreUsuario)
+                .claim("roles", List.of(rolFormateado))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + TIEMPO_EXPIRACION))
                 .signWith(getLlaveFirma(), SignatureAlgorithm.HS256)

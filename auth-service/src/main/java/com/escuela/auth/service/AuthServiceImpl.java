@@ -33,10 +33,13 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("El nombre de usuario ya existe");
         }
 
+        String rolFinal = request.rol() != null ? request.rol().toUpperCase() : "DOCENTE";
+
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(request.nombreUsuario())
                 .clave(passwordEncoder.encode(request.clave()))
                 .correo(request.correo())
+                .rol(rolFinal)
                 .build();
 
         usuarioRepository.save(usuario);
@@ -55,7 +58,7 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("Credenciales invalidas");
         }
 
-        String jwtToken = jwtService.generarToken(usuario.getNombreUsuario());
+        String jwtToken = jwtService.generarToken(usuario.getNombreUsuario(), usuario.getRol());
         RefreshToken refreshToken = refreshTokenService.crearRefreshToken(usuario.getNombreUsuario());
 
         return new LoginResponse(jwtToken, refreshToken.getToken(), usuario.getNombreUsuario());
@@ -75,7 +78,7 @@ public class AuthServiceImpl implements AuthService {
 
         RefreshToken refreshToken = refreshTokenService.verificarExpiracion(tokenOptional.get());
         Usuario usuario = refreshToken.getUsuario();
-        String nuevoToken = jwtService.generarToken(usuario.getNombreUsuario());
+        String nuevoToken = jwtService.generarToken(usuario.getNombreUsuario(), usuario.getRol());
 
         return new LoginResponse(nuevoToken, request.refreshToken(), usuario.getNombreUsuario());
     }

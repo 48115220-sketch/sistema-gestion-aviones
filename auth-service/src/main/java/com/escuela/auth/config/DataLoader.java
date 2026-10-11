@@ -1,36 +1,39 @@
-package com.escuela.auth.config;
+﻿package com.escuela.auth.config;
 
 import com.escuela.auth.model.Usuario;
 import com.escuela.auth.repository.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 
-@Configuration
-public class DataLoader {
+@Component
+public class DataLoader implements CommandLineRunner {
 
-    @Bean
-    public CommandLineRunner initData(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
-        return args -> {
-            try {
-                Usuario admin = usuarioRepository.findByNombreUsuario("admin").orElse(null);
-                if (admin == null) {
-                    admin = Usuario.builder()
-                            .nombreUsuario("admin")
-                            .clave(passwordEncoder.encode("admin777"))
-                            .correo("admin@escuela.com")
-                            .build();
-                } else {
-                    admin.setClave(passwordEncoder.encode("admin777"));
-                }
-                usuarioRepository.save(admin);
-                System.out.println("\n=================================================");
-                System.out.println(">>> USUARIO 'admin' CREADO/ACTUALIZADO CON CLAVE 'admin777' <<<");
-                System.out.println("=================================================\n");
-            } catch (Exception e) {
-                System.out.println("Error inicializando datos: " + e.getMessage());
-            }
-        };
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Override
+    public void run(String... args) throws Exception {
+        crearUsuarioSiNoExiste("admin", "admin777", "admin@escuela.com", "ROOT");
+        crearUsuarioSiNoExiste("preceptor", "123456", "preceptor@escuela.com", "PRECEPTOR");
+        crearUsuarioSiNoExiste("docente", "123456", "docente@escuela.com", "DOCENTE");
+        crearUsuarioSiNoExiste("director", "123456", "director@escuela.com", "DIRECTOR");
+        crearUsuarioSiNoExiste("administrativo", "123456", "adminis@escuela.com", "ADMINISTRATIVO");
+    }
+
+    private void crearUsuarioSiNoExiste(String nombreUsuario, String clave, String correo, String rol) {
+        if (!usuarioRepository.existsByNombreUsuario(nombreUsuario)) {
+            Usuario usuario = Usuario.builder()
+                    .nombreUsuario(nombreUsuario)
+                    .clave(passwordEncoder.encode(clave))
+                    .correo(correo)
+                    .rol(rol)
+                    .build();
+            usuarioRepository.save(usuario);
+        }
     }
 }

@@ -6,5 +6,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public record RegisterRequest(
     @JsonProperty("username") @JsonAlias({"nombreUsuario", "user"}) String nombreUsuario,
     @JsonProperty("password") @JsonAlias({"clave", "contrasena"}) String clave,
-    String correo
+    String correo,
+    String rol
 ) {}

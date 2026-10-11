@@ -22,4 +22,6 @@ public class Usuario {
     private String clave;
 
     private String correo;
+
+    private String rol;
 }

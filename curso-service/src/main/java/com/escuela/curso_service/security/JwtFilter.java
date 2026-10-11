@@ -17,7 +17,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -34,19 +35,33 @@ public class JwtFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             try {
-                Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-                Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(key)
-                        .build()
-                        .parseClaimsJws(token)
-                        .getBody();
+                if (!token.equalsIgnoreCase("null") && !token.equalsIgnoreCase("undefined") && !token.trim().isEmpty()) {
+                    Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+                    Claims claims = Jwts.parserBuilder()
+                            .setSigningKey(key)
+                            .build()
+                            .parseClaimsJws(token)
+                            .getBody();
 
-                String username = claims.getSubject();
+                    String username = claims.getSubject();
+                    List<?> rawRoles = claims.get("roles", List.class);
 
-                if (username != null) {
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                            username, null, Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")));
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    if (username != null) {
+                        List<SimpleGrantedAuthority> authorities;
+                        if (rawRoles != null && !rawRoles.isEmpty()) {
+                            authorities = rawRoles.stream()
+                                    .map(Object::toString)
+                                    .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
+                                    .map(SimpleGrantedAuthority::new)
+                                    .collect(Collectors.toList());
+                        } else {
+                            authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+                        }
+
+                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                                username, null, authorities);
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
                 }
             } catch (Exception e) {
                 SecurityContextHolder.clearContext();

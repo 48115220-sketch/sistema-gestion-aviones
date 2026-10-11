@@ -1,31 +1,36 @@
-server:
+﻿server:
   port: 8080
 
 spring:
   application:
     name: gateway-service
+  config:
+    import: "optional:configserver:http://localhost:8888/"
   cloud:
+    config:
+      username: configuser
+      password: configpass123
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
       routes:
         - id: auth-service
-          uri: http://localhost:8084
+          uri: lb://AUTH-SERVICE
           predicates:
             - Path=/auth/**
 
         - id: admin-service
-          uri: http://localhost:8083
+          uri: lb://ADMIN-SERVICE
           predicates:
             - Path=/auth-admin/**, /admin/**
 
         - id: alumno-service
-          uri: http://localhost:8081
+          uri: lb://ALUMNO-SERVICE
           predicates:
             - Path=/alumnos/**
 
         - id: curso-service
-          uri: http://localhost:8082
+          uri: lb://CURSO-SERVICE
           predicates:
             - Path=/cursos/**
 

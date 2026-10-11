@@ -1,6 +1,8 @@
 package com.escuela.curso_service.service;
 
+import com.escuela.curso_service.client.AlumnoClient;
 import com.escuela.curso_service.client.DocenteClient;
+import com.escuela.curso_service.dto.AlumnoDTO;
 import com.escuela.curso_service.dto.CursoAltaDTO;
 import com.escuela.curso_service.dto.CursoConDocenteDTO;
 import com.escuela.curso_service.dto.DocenteDTO;
@@ -8,9 +10,11 @@ import com.escuela.curso_service.entidad.Curso;
 import com.escuela.curso_service.repository.CursoRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +27,9 @@ public class CursoServiceImpl implements CursoService {
 
     @Autowired(required = false)
     private DocenteClient docenteClient;
+
+    @Autowired(required = false)
+    private AlumnoClient alumnoClient;
 
     @Override
     public List<CursoConDocenteDTO> obtenerTodos() {
@@ -63,11 +70,36 @@ public class CursoServiceImpl implements CursoService {
 
     @Override
     public boolean eliminar(Integer id) {
-        if (cursoRepository.existsById(id)) {
-            cursoRepository.deleteById(id);
-            return true;
+        if (!cursoRepository.existsById(id)) {
+            return false;
         }
-        return false;
+
+        if (alumnoClient != null) {
+            try {
+                String token = obtenerTokenActual();
+                List<AlumnoDTO> alumnos = alumnoClient.obtenerTodosAlumnos(token);
+                if (alumnos != null) {
+                    boolean tieneAlumnos = alumnos.stream()
+                            .anyMatch(a -> a.cursoId() != null && a.cursoId().equals(id));
+                    if (tieneAlumnos) {
+                        throw new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "No se puede eliminar el curso porque contiene alumnos asignados."
+                        );
+                    }
+                }
+            } catch (ResponseStatusException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new ResponseStatusException(
+                        HttpStatus.SERVICE_UNAVAILABLE,
+                        "No se pudo verificar si el curso tiene alumnos. Verifique que alumno-service esté activo."
+                );
+            }
+        }
+
+        cursoRepository.deleteById(id);
+        return true;
     }
 
     private CursoConDocenteDTO convertirAConDocenteDTO(Curso curso) {
