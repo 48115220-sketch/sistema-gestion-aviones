@@ -1,4 +1,4 @@
-﻿package com.escuela.alumno_service.service;
+package com.escuela.alumno_service.service;
 
 import com.escuela.alumno_service.config.RabbitMQConfig;
 import com.escuela.alumno_service.dto.AlumnoAltaDTO;
