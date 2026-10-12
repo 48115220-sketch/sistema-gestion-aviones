@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mysqldb:
     image: mysql:8.0
@@ -54,6 +56,9 @@ services:
       - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
+      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - eureka-server
       - config-server
@@ -70,6 +75,9 @@ services:
       - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
+      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - eureka-server
       - config-server
@@ -86,6 +94,9 @@ services:
       - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
+      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
     depends_on:
       - eureka-server
@@ -104,6 +115,9 @@ services:
       - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
+      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
     depends_on:
       - eureka-server
@@ -122,6 +136,8 @@ services:
       - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - eureka-server
