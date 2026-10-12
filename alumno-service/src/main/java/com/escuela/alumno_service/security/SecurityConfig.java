@@ -35,9 +35,16 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(exception -> exception
                 .authenticationEntryPoint((request, response, authException) -> {
+                    System.err.println(">>> [ALUMNO-SERVICE SecurityConfig] RECHAZADO POR SECURITY (401): " + authException.getMessage());
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Token JWT requerido o invalido\"}");
+                    response.getWriter().write("{\"error\": \"Unauthorized\", \"details\": \"" + authException.getMessage() + "\"}");
+                })
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    System.err.println(">>> [ALUMNO-SERVICE SecurityConfig] ACCESO DENEGADO (403): " + accessDeniedException.getMessage());
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json");
+                    response.getWriter().write("{\"error\": \"Forbidden\", \"details\": \"" + accessDeniedException.getMessage() + "\"}");
                 })
             )
             .authorizeHttpRequests(auth -> auth

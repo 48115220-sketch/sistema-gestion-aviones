@@ -61,9 +61,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             username, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
-            } catch (Exception e) {
-                SecurityContextHolder.clearContext();
-            }
+           } catch (Exception e) {
+           System.out.println("=== ERROR VALIDANDO JWT EN ALUMNO-SERVICE ===");
+           System.out.println("Secret actual: " + secret);
+           e.printStackTrace();
+           SecurityContextHolder.clearContext();
+          }
         }
 
         filterChain.doFilter(request, response);

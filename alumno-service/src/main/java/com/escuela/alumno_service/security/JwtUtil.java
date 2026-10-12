@@ -26,10 +26,12 @@ public class JwtUtil {
     }
 
     public boolean esTokenValido(String token) {
-        try {
-            return !obtenerClaims(token).getExpiration().before(new Date());
+    try {
+        return !obtenerClaims(token).getExpiration().before(new Date());
         } catch (Exception e) {
-            return false;
+        System.err.println(">>> [ALUMNO-SERVICE JwtUtil] ERROR VALIDANDO TOKEN: " + e.getMessage());
+        e.printStackTrace();
+        return false;
         }
     }
 
