@@ -4,5 +4,6 @@ public record AlumnoAltaDTO(
     String nombre,
     String apellido,
     String dni,
-    Integer cursoId
+    Integer cursoId,
+    String estado
 ) {}
