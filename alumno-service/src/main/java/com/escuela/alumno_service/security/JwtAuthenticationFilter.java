@@ -17,8 +17,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -30,43 +30,48 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String header = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
-            String token = header.substring(7);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
             try {
-                Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-                Claims claims = Jwts.parserBuilder()
-                        .setSigningKey(key)
-                        .build()
-                        .parseClaimsJws(token)
-                        .getBody();
+                if (!token.equalsIgnoreCase("null") && !token.equalsIgnoreCase("undefined") && !token.trim().isEmpty()) {
+                    Key key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+                    Claims claims = Jwts.parserBuilder()
+                            .setSigningKey(key)
+                            .build()
+                            .parseClaimsJws(token)
+                            .getBody();
 
-                String username = claims.getSubject();
-                List<?> rawRoles = claims.get("roles", List.class);
-
-                if (username != null) {
-                    List<SimpleGrantedAuthority> authorities;
-                    if (rawRoles != null && !rawRoles.isEmpty()) {
-                        authorities = rawRoles.stream()
-                                .map(Object::toString)
-                                .map(r -> r.startsWith("ROLE_") ? r : "ROLE_" + r)
-                                .map(SimpleGrantedAuthority::new)
-                                .collect(Collectors.toList());
-                    } else {
-                        authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
+                    String username = claims.getSubject();
+                    Object rolesObject = claims.get("roles");
+                    if (rolesObject == null) {
+                        rolesObject = claims.get("role");
                     }
 
-                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                            username, null, authorities);
-                    SecurityContextHolder.getContext().setAuthentication(auth);
+                    if (username != null) {
+                        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                        if (rolesObject instanceof List<?>) {
+                            for (Object r : (List<?>) rolesObject) {
+                                String rStr = r.toString();
+                                authorities.add(new SimpleGrantedAuthority(rStr.startsWith("ROLE_") ? rStr : "ROLE_" + rStr));
+                            }
+                        } else if (rolesObject instanceof String) {
+                            String rStr = (String) rolesObject;
+                            authorities.add(new SimpleGrantedAuthority(rStr.startsWith("ROLE_") ? rStr : "ROLE_" + rStr));
+                        } else {
+                            authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+                        }
+
+                        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                                username, null, authorities);
+                        SecurityContextHolder.getContext().setAuthentication(auth);
+                    }
                 }
-           } catch (Exception e) {
-           System.out.println("=== ERROR VALIDANDO JWT EN ALUMNO-SERVICE ===");
-           System.out.println("Secret actual: " + secret);
-           e.printStackTrace();
-           SecurityContextHolder.clearContext();
-          }
+            } catch (Exception e) {
+                System.err.println(">>> [ALUMNO-SERVICE] ERROR JWT: " + e.getMessage());
+                SecurityContextHolder.clearContext();
+            }
         }
 
         filterChain.doFilter(request, response);

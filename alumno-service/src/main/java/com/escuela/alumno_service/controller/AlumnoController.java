@@ -1,4 +1,4 @@
-package com.escuela.alumno_service.controller;
+﻿package com.escuela.alumno_service.controller;
 
 import com.escuela.alumno_service.dto.AlumnoAltaDTO;
 import com.escuela.alumno_service.dto.AlumnoConCursoDTO;
@@ -41,14 +41,14 @@ public class AlumnoController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('PRECEPTOR', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PRECEPTOR', 'ADMINISTRATIVO')")
     public ResponseEntity<AlumnoConCursoDTO> crear(@RequestBody AlumnoAltaDTO altaDTO) {
         AlumnoConCursoDTO creado = alumnoService.guardar(altaDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PRECEPTOR', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PRECEPTOR', 'ADMINISTRATIVO')")
     public ResponseEntity<AlumnoConCursoDTO> actualizar(@PathVariable Integer id, @RequestBody AlumnoAltaDTO altaDTO) {
         AlumnoConCursoDTO actualizado = alumnoService.actualizar(id, altaDTO);
         if (actualizado != null) {
@@ -58,7 +58,7 @@ public class AlumnoController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('PRECEPTOR', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PRECEPTOR', 'ADMINISTRATIVO')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         if (alumnoService.eliminar(id)) {
             return ResponseEntity.noContent().build();
