@@ -1,4 +1,4 @@
-﻿package com.escuela.alumno_service.controller;
+package com.escuela.alumno_service.controller;
 
 import com.escuela.alumno_service.dto.AlumnoAltaDTO;
 import com.escuela.alumno_service.dto.AlumnoConCursoDTO;
