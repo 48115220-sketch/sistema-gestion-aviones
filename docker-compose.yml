@@ -78,10 +78,12 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_RABBITMQ_HOST=rabbitmq
     depends_on:
       - eureka-server
       - config-server
       - mysqldb
+      - rabbitmq
     networks:
       - escuela-network
 
