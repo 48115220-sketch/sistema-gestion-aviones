@@ -5,6 +5,7 @@ import com.escuela.alumno_service.dto.AlumnoAltaDTO;
 import com.escuela.alumno_service.dto.AlumnoConCursoDTO;
 import com.escuela.alumno_service.entidad.Alumno;
 import com.escuela.alumno_service.event.AlumnoEvent;
+import com.escuela.alumno_service.event.AlumnoEstadoEvent;
 import com.escuela.alumno_service.repository.AlumnoRepository;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,10 +41,24 @@ public class AlumnoServiceImpl implements AlumnoService {
         alumno.setEstado(altaDTO.estado() != null && !altaDTO.estado().trim().isEmpty() ? altaDTO.estado() : "HABILITADO");
         
         Alumno guardado = alumnoRepository.save(alumno);
-        if (rabbitTemplate != null && guardado.getCursoId() != null) {
-            try { 
-                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_ALUMNO_ALTA, new AlumnoEvent(guardado.getId().longValue(), guardado.getCursoId().longValue())); 
-            } catch (Exception e) {}
+        
+        if (rabbitTemplate != null) {
+            // 1. Notificar alta para descontar cupo en curso-service
+            if (guardado.getCursoId() != null) {
+                try { 
+                    rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_ALUMNO_ALTA, 
+                            new AlumnoEvent(guardado.getId().longValue(), guardado.getCursoId().longValue())); 
+                } catch (Exception e) {
+                    System.err.println("Error al enviar evento alumno.alta.queue: " + e.getMessage());
+                }
+            }
+            // 2. Notificar auditoria a admin-service
+            try {
+                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_ALUMNO_ESTADO, 
+                        new AlumnoEstadoEvent(guardado.getId().longValue(), guardado.getEstado()));
+            } catch (Exception e) {
+                System.err.println("Error al enviar evento alumno.estado.queue: " + e.getMessage());
+            }
         }
         return convertirAConCursoDTO(guardado);
     }
@@ -59,15 +74,49 @@ public class AlumnoServiceImpl implements AlumnoService {
             } else {
                 alumno.setEstado("HABILITADO");
             }
-            return convertirAConCursoDTO(alumnoRepository.save(alumno));
+            Alumno guardado = alumnoRepository.save(alumno);
+
+            // Notificar cambio de estado a auditoria
+            if (rabbitTemplate != null) {
+                try {
+                    rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_ALUMNO_ESTADO, 
+                            new AlumnoEstadoEvent(guardado.getId().longValue(), guardado.getEstado()));
+                } catch (Exception e) {
+                    System.err.println("Error al enviar evento alumno.estado.queue: " + e.getMessage());
+                }
+            }
+
+            return convertirAConCursoDTO(guardado);
         }).orElse(null);
     }
 
     @Override public boolean eliminar(Integer id) {
         return alumnoRepository.findById(id).map(alumno -> { 
+            Integer cursoAnteriorId = alumno.getCursoId();
+
             alumno.setEstado("DESHABILITADO"); 
             alumno.setCursoId(null); 
             alumnoRepository.save(alumno); 
+
+            if (rabbitTemplate != null) {
+                // 1. Notificar baja para liberar vacante en curso-service
+                if (cursoAnteriorId != null) {
+                    try {
+                        rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_ALUMNO_BAJA, 
+                                new AlumnoEvent(alumno.getId().longValue(), cursoAnteriorId.longValue()));
+                    } catch (Exception e) {
+                        System.err.println("Error al enviar evento alumno.baja.queue: " + e.getMessage());
+                    }
+                }
+                // 2. Notificar auditoria
+                try {
+                    rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_ALUMNO_ESTADO, 
+                            new AlumnoEstadoEvent(alumno.getId().longValue(), "DESHABILITADO"));
+                } catch (Exception e) {
+                    System.err.println("Error al enviar evento alumno.estado.queue: " + e.getMessage());
+                }
+            }
+
             return true; 
         }).orElse(false);
     }

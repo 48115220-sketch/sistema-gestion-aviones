@@ -51,6 +51,7 @@ public class CursoServiceImpl implements CursoService {
         Curso curso = new Curso();
         curso.setNombre(altaDTO.nombre());
         curso.setDocenteId(altaDTO.docenteId());
+        curso.setCupo(altaDTO.cupo() != null ? altaDTO.cupo() : 30);
 
         Curso guardado = cursoRepository.save(curso);
         return convertirAConDocenteDTO(guardado);
@@ -62,6 +63,9 @@ public class CursoServiceImpl implements CursoService {
                 .map(curso -> {
                     curso.setNombre(altaDTO.nombre());
                     curso.setDocenteId(altaDTO.docenteId());
+                    if (altaDTO.cupo() != null) {
+                        curso.setCupo(altaDTO.cupo());
+                    }
                     Curso actualizado = cursoRepository.save(curso);
                     return convertirAConDocenteDTO(actualizado);
                 })
@@ -93,7 +97,7 @@ public class CursoServiceImpl implements CursoService {
             } catch (Exception e) {
                 throw new ResponseStatusException(
                         HttpStatus.SERVICE_UNAVAILABLE,
-                        "No se pudo verificar si el curso tiene alumnos. Verifique que alumno-service esté activo."
+                        "No se pudo verificar si el curso tiene alumnos. Verifique que alumno-service este activo."
                 );
             }
         }
@@ -116,6 +120,7 @@ public class CursoServiceImpl implements CursoService {
                 curso.getId(),
                 curso.getNombre(),
                 curso.getDocenteId(),
+                curso.getCupo(),
                 docenteDTO
         );
     }

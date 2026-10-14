@@ -13,13 +13,15 @@ public class Curso {
     private Integer id;
     private String nombre;
     private Integer docenteId;
+    private Integer cupo = 30;
 
     public Curso() {}
 
-    public Curso(Integer id, String nombre, Integer docenteId) {
+    public Curso(Integer id, String nombre, Integer docenteId, Integer cupo) {
         this.id = id;
         this.nombre = nombre;
         this.docenteId = docenteId;
+        this.cupo = cupo;
     }
 
     public Integer getId() { return id; }
@@ -30,4 +32,7 @@ public class Curso {
 
     public Integer getDocenteId() { return docenteId; }
     public void setDocenteId(Integer docenteId) { this.docenteId = docenteId; }
+
+    public Integer getCupo() { return cupo; }
+    public void setCupo(Integer cupo) { this.cupo = cupo; }
 }

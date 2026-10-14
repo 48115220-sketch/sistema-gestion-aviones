@@ -4,5 +4,6 @@ public record CursoConDocenteDTO(
     Integer id,
     String nombre,
     Integer docenteId,
+    Integer cupo,
     DocenteDTO docente
 ) {}

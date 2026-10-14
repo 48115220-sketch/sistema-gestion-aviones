@@ -19,13 +19,13 @@ public class PersonalController {
     private PersonalService docenteService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'PRECEPTOR', 'DIRECTOR', 'DOCENTE')")
     public List<PersonalDTO> listarTodos() {
         return docenteService.obtenerTodos();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'DIRECTOR')")
+    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'PRECEPTOR', 'DIRECTOR', 'DOCENTE')")
     public ResponseEntity<PersonalDTO> obtenerPorId(@PathVariable Integer id) {
         PersonalDTO docente = docenteService.obtenerPorId(id);
         if (docente == null) {
