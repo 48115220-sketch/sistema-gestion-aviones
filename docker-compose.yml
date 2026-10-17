@@ -1,14 +1,83 @@
 version: '3.8'
 
 services:
-  mysqldb:
+  auth-db:
     image: mysql:8.0
-    container_name: mysqldb
-    ports:
-      - "3306:3306"
+    container_name: auth-db
     environment:
-      MYSQL_DATABASE: escuela_db
-      MYSQL_ROOT_PASSWORD: rootpassword
+      - MYSQL_ROOT_PASSWORD=root_secure_pass
+      - MYSQL_USER=auth_user
+      - MYSQL_PASSWORD=auth_pass
+      - MYSQL_DATABASE=auth_database
+    ports:
+      - "3307:3306"
+    volumes:
+      - auth_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - escuela-network
+
+  admin-db:
+    image: mysql:8.0
+    container_name: admin-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_secure_pass
+      - MYSQL_USER=admin_user
+      - MYSQL_PASSWORD=admin_pass
+      - MYSQL_DATABASE=admin_database
+    ports:
+      - "3308:3306"
+    volumes:
+      - admin_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - escuela-network
+
+  alumno-db:
+    image: mysql:8.0
+    container_name: alumno-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_secure_pass
+      - MYSQL_USER=alumno_user
+      - MYSQL_PASSWORD=alumno_pass
+      - MYSQL_DATABASE=alumno_database
+    ports:
+      - "3309:3306"
+    volumes:
+      - alumno_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - escuela-network
+
+  curso-db:
+    image: mysql:8.0
+    container_name: curso-db
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_secure_pass
+      - MYSQL_USER=curso_user
+      - MYSQL_PASSWORD=curso_pass
+      - MYSQL_DATABASE=curso_database
+    ports:
+      - "3310:3306"
+    volumes:
+      - curso_db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     networks:
       - escuela-network
 
@@ -59,10 +128,18 @@ services:
       - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://auth-db:3306/auth_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=auth_user
+      - SPRING_DATASOURCE_PASSWORD=auth_pass
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
     depends_on:
-      - eureka-server
-      - config-server
-      - mysqldb
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+      auth-db:
+        condition: service_healthy
     networks:
       - escuela-network
 
@@ -79,11 +156,20 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=jdbc:mysql://admin-db:3306/admin_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=admin_user
+      - SPRING_DATASOURCE_PASSWORD=admin_pass
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
     depends_on:
-      - eureka-server
-      - config-server
-      - mysqldb
-      - rabbitmq
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      admin-db:
+        condition: service_healthy
     networks:
       - escuela-network
 
@@ -100,11 +186,20 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=jdbc:mysql://alumno-db:3306/alumno_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=alumno_user
+      - SPRING_DATASOURCE_PASSWORD=alumno_pass
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
     depends_on:
-      - eureka-server
-      - config-server
-      - rabbitmq
-      - mysqldb
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      alumno-db:
+        condition: service_healthy
     networks:
       - escuela-network
 
@@ -121,11 +216,20 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_DATASOURCE_URL=jdbc:mysql://curso-db:3306/curso_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=curso_user
+      - SPRING_DATASOURCE_PASSWORD=curso_pass
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
     depends_on:
-      - eureka-server
-      - config-server
-      - rabbitmq
-      - mysqldb
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+      rabbitmq:
+        condition: service_started
+      curso-db:
+        condition: service_healthy
     networks:
       - escuela-network
 
@@ -160,6 +264,12 @@ services:
       - gateway-service
     networks:
       - escuela-network
+
+volumes:
+  auth_db_data:
+  admin_db_data:
+  alumno_db_data:
+  curso_db_data:
 
 networks:
   escuela-network:
