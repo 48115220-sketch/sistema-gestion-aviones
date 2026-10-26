@@ -11,7 +11,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.escuela</groupId>
+    <groupId>com.terminal</groupId>
     <artifactId>config-server</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>config-server</name>

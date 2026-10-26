@@ -21,21 +21,21 @@ services:
       retries: 20
       start_period: 20s
     networks:
-      - escuela-network
+      - terminal-network
 
-  admin-db:
+  personal-db:
     image: mysql:8.0
-    container_name: admin-db
+    container_name: personal-db
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=root_secure_pass
-      - MYSQL_USER=admin_user
-      - MYSQL_PASSWORD=admin_pass
-      - MYSQL_DATABASE=admin_database
+      - MYSQL_USER=personal_user
+      - MYSQL_PASSWORD=personal_pass
+      - MYSQL_DATABASE=personal_database
     ports:
       - "3308:3306"
     volumes:
-      - admin_db_data:/var/lib/mysql
+      - personal_db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -43,21 +43,21 @@ services:
       retries: 20
       start_period: 20s
     networks:
-      - escuela-network
+      - terminal-network
 
-  alumno-db:
+  vuelos-db:
     image: mysql:8.0
-    container_name: alumno-db
+    container_name: vuelos-db
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=root_secure_pass
-      - MYSQL_USER=alumno_user
-      - MYSQL_PASSWORD=alumno_pass
-      - MYSQL_DATABASE=alumno_database
+      - MYSQL_USER=vuelos_user
+      - MYSQL_PASSWORD=vuelos_pass
+      - MYSQL_DATABASE=vuelos_database
     ports:
       - "3309:3306"
     volumes:
-      - alumno_db_data:/var/lib/mysql
+      - vuelos_db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -65,21 +65,21 @@ services:
       retries: 20
       start_period: 20s
     networks:
-      - escuela-network
+      - terminal-network
 
-  curso-db:
+  aviones-db:
     image: mysql:8.0
-    container_name: curso-db
+    container_name: aviones-db
     restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=root_secure_pass
-      - MYSQL_USER=curso_user
-      - MYSQL_PASSWORD=curso_pass
-      - MYSQL_DATABASE=curso_database
+      - MYSQL_USER=aviones_user
+      - MYSQL_PASSWORD=aviones_pass
+      - MYSQL_DATABASE=aviones_database
     ports:
       - "3310:3306"
     volumes:
-      - curso_db_data:/var/lib/mysql
+      - aviones_db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
@@ -87,7 +87,7 @@ services:
       retries: 20
       start_period: 20s
     networks:
-      - escuela-network
+      - terminal-network
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -100,7 +100,7 @@ services:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
     networks:
-      - escuela-network
+      - terminal-network
 
   eureka-server:
     build: ./eureka-server
@@ -111,7 +111,7 @@ services:
     environment:
       - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC
     networks:
-      - escuela-network
+      - terminal-network
 
   config-server:
     build: ./config-server
@@ -122,10 +122,12 @@ services:
     environment:
       - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/TU_USUARIO/TU_REPOSITORIO_CONFIG.git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=main
     depends_on:
       - eureka-server
     networks:
-      - escuela-network
+      - terminal-network
 
   auth-service:
     build: ./auth-service
@@ -153,11 +155,11 @@ services:
       auth-db:
         condition: service_healthy
     networks:
-      - escuela-network
+      - terminal-network
 
-  admin-service:
-    build: ./admin-service
-    container_name: admin-service
+  personal-service:
+    build: ./personal-service
+    container_name: personal-service
     restart: unless-stopped
     ports:
       - "8083:8083"
@@ -169,9 +171,9 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_DATASOURCE_URL=jdbc:mysql://admin-db:3306/admin_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=admin_user
-      - SPRING_DATASOURCE_PASSWORD=admin_pass
+      - SPRING_DATASOURCE_URL=jdbc:mysql://personal-db:3306/personal_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=personal_user
+      - SPRING_DATASOURCE_PASSWORD=personal_pass
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
     depends_on:
@@ -181,14 +183,14 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_started
-      admin-db:
+      personal-db:
         condition: service_healthy
     networks:
-      - escuela-network
+      - terminal-network
 
-  alumno-service:
-    build: ./alumno-service
-    container_name: alumno-service
+  vuelos-service:
+    build: ./vuelos-service
+    container_name: vuelos-service
     restart: unless-stopped
     ports:
       - "8081:8081"
@@ -200,9 +202,9 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_DATASOURCE_URL=jdbc:mysql://alumno-db:3306/alumno_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=alumno_user
-      - SPRING_DATASOURCE_PASSWORD=alumno_pass
+      - SPRING_DATASOURCE_URL=jdbc:mysql://vuelos-db:3306/vuelos_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=vuelos_user
+      - SPRING_DATASOURCE_PASSWORD=vuelos_pass
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
     depends_on:
@@ -212,14 +214,14 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_started
-      alumno-db:
+      vuelos-db:
         condition: service_healthy
     networks:
-      - escuela-network
+      - terminal-network
 
-  curso-service:
-    build: ./curso-service
-    container_name: curso-service
+  aviones-service:
+    build: ./aviones-service
+    container_name: aviones-service
     restart: unless-stopped
     ports:
       - "8082:8082"
@@ -231,9 +233,9 @@ services:
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
-      - SPRING_DATASOURCE_URL=jdbc:mysql://curso-db:3306/curso_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=curso_user
-      - SPRING_DATASOURCE_PASSWORD=curso_pass
+      - SPRING_DATASOURCE_URL=jdbc:mysql://aviones-db:3306/aviones_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=aviones_user
+      - SPRING_DATASOURCE_PASSWORD=aviones_pass
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=com.mysql.cj.jdbc.Driver
       - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.MySQLDialect
     depends_on:
@@ -243,10 +245,10 @@ services:
         condition: service_started
       rabbitmq:
         condition: service_started
-      curso-db:
+      aviones-db:
         condition: service_healthy
     networks:
-      - escuela-network
+      - terminal-network
 
   gateway-service:
     build: ./gateway-service
@@ -265,29 +267,29 @@ services:
       - eureka-server
       - config-server
       - auth-service
-      - admin-service
-      - alumno-service
-      - curso-service
+      - personal-service
+      - vuelos-service
+      - aviones-service
     networks:
-      - escuela-network
+      - terminal-network
 
-  frontend-escuela:
-    image: brigitteca/escuela-front:latest
-    container_name: frontend-escuela
+  frontend-terminal:
+    image: brigitteca/terminal-front:latest
+    container_name: frontend-terminal
     restart: unless-stopped
     ports:
       - "4200:80"
     depends_on:
       - gateway-service
     networks:
-      - escuela-network
+      - terminal-network
 
 volumes:
   auth_db_data:
-  admin_db_data:
-  alumno_db_data:
-  curso_db_data:
+  personal_db_data:
+  vuelos_db_data:
+  aviones_db_data:
 
 networks:
-  escuela-network:
+  terminal-network:
     driver: bridge

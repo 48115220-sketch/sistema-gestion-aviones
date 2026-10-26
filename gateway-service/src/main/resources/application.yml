@@ -19,20 +19,20 @@ spring:
           predicates:
             - Path=/auth/**
 
-        - id: admin-service
-          uri: lb://ADMIN-SERVICE
+        - id: personal-service
+          uri: lb://PERSONAL-SERVICE
           predicates:
-            - Path=/auth-admin/**, /admin/**
+            - Path=/admin/**
 
-        - id: alumno-service
-          uri: lb://ALUMNO-SERVICE
+        - id: vuelos-service
+          uri: lb://VUELOS-SERVICE
           predicates:
-            - Path=/alumnos/**
+            - Path=/vuelos/**
 
-        - id: curso-service
-          uri: lb://CURSO-SERVICE
+        - id: aviones-service
+          uri: lb://AVIONES-SERVICE
           predicates:
-            - Path=/cursos/**
+            - Path=/aviones/**
 
 eureka:
   client:
