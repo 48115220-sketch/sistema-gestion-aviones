@@ -4,6 +4,7 @@ services:
   auth-db:
     image: mysql:8.0
     container_name: auth-db
+    restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=root_secure_pass
       - MYSQL_USER=auth_user
@@ -25,6 +26,7 @@ services:
   admin-db:
     image: mysql:8.0
     container_name: admin-db
+    restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=root_secure_pass
       - MYSQL_USER=admin_user
@@ -46,6 +48,7 @@ services:
   alumno-db:
     image: mysql:8.0
     container_name: alumno-db
+    restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=root_secure_pass
       - MYSQL_USER=alumno_user
@@ -67,6 +70,7 @@ services:
   curso-db:
     image: mysql:8.0
     container_name: curso-db
+    restart: unless-stopped
     environment:
       - MYSQL_ROOT_PASSWORD=root_secure_pass
       - MYSQL_USER=curso_user
@@ -88,6 +92,7 @@ services:
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
+    restart: unless-stopped
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -100,6 +105,7 @@ services:
   eureka-server:
     build: ./eureka-server
     container_name: eureka-server
+    restart: unless-stopped
     ports:
       - "8761:8761"
     environment:
@@ -110,6 +116,7 @@ services:
   config-server:
     build: ./config-server
     container_name: config-server
+    restart: unless-stopped
     ports:
       - "8888:8888"
     environment:
@@ -123,10 +130,11 @@ services:
   auth-service:
     build: ./auth-service
     container_name: auth-service
+    restart: unless-stopped
     ports:
       - "8084:8084"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
       - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
@@ -150,10 +158,11 @@ services:
   admin-service:
     build: ./admin-service
     container_name: admin-service
+    restart: unless-stopped
     ports:
       - "8083:8083"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
       - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
@@ -180,10 +189,11 @@ services:
   alumno-service:
     build: ./alumno-service
     container_name: alumno-service
+    restart: unless-stopped
     ports:
       - "8081:8081"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
       - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
@@ -210,10 +220,11 @@ services:
   curso-service:
     build: ./curso-service
     container_name: curso-service
+    restart: unless-stopped
     ports:
       - "8082:8082"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx256m -Xms64m -XX:+UseSerialGC
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
       - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
@@ -240,6 +251,7 @@ services:
   gateway-service:
     build: ./gateway-service
     container_name: gateway-service
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
@@ -262,6 +274,7 @@ services:
   frontend-escuela:
     image: brigitteca/escuela-front:latest
     container_name: frontend-escuela
+    restart: unless-stopped
     ports:
       - "4200:80"
     depends_on:
