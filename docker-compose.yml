@@ -255,8 +255,8 @@ services:
     networks:
       - escuela-network
 
-  frontend-escuela:
-    build: ./frontend-escuela
+frontend-escuela:
+    image: brigitteca/escuela-front:latest
     container_name: frontend-escuela
     ports:
       - "4200:80"
