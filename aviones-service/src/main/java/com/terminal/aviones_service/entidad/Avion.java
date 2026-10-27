@@ -17,15 +17,17 @@ public class Avion {
     private Integer capacidadPersonas;
     private Float capacidadEquipaje;
     private Integer personalId;
+    private String estado;
 
     public Avion() {}
 
-    public Avion(Integer id, String modelo, Integer capacidadPersonas, Float capacidadEquipaje, Integer personalId) {
+    public Avion(Integer id, String modelo, Integer capacidadPersonas, Float capacidadEquipaje, Integer personalId, String estado) {
         this.id = id;
         this.modelo = modelo;
         this.capacidadPersonas = capacidadPersonas;
         this.capacidadEquipaje = capacidadEquipaje;
         this.personalId = personalId;
+        this.estado = estado;
     }
 
     public Integer getId() { return id; }
@@ -42,4 +44,7 @@ public class Avion {
 
     public Integer getPersonalId() { return personalId; }
     public void setPersonalId(Integer personalId) { this.personalId = personalId; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 }

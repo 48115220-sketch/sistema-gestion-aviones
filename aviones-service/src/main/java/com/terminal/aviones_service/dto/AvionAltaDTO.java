@@ -4,5 +4,6 @@ public record AvionAltaDTO(
     String modelo,
     Integer capacidadPersonas,
     Float capacidadEquipaje,
-    Integer personalId
+    Integer personalId,
+    String estado
 ) {}

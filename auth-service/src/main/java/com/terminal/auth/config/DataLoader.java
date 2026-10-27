@@ -21,11 +21,9 @@ public class DataLoader implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("Iniciando verificación y carga de usuarios iniciales...");
-        crearUsuarioSiNoExiste("admin", "admin777", "admin@escuela.com", "ROOT");
-        crearUsuarioSiNoExiste("preceptor", "123456", "preceptor@escuela.com", "PRECEPTOR");
-        crearUsuarioSiNoExiste("docente", "123456", "docente@escuela.com", "DOCENTE");
-        crearUsuarioSiNoExiste("director", "123456", "director@escuela.com", "DIRECTOR");
-        crearUsuarioSiNoExiste("administrativo", "123456", "adminis@escuela.com", "ADMINISTRATIVO");
+        crearUsuarioSiNoExiste("admin", "admin777", "admin@terminal.com", "ROOT");
+        crearUsuarioSiNoExiste("piloto", "123456", "piloto@terminal.com", "PILOTO");
+        crearUsuarioSiNoExiste("azafata", "123456", "azafata@terminal.com", "AZAFATA");
         log.info("Carga inicial de usuarios finalizada.");
     }
 

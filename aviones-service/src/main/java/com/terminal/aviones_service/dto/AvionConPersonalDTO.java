@@ -6,5 +6,6 @@ public record AvionConPersonalDTO(
     Integer capacidadPersonas,
     Float capacidadEquipaje,
     Integer personalId,
+    String estado,
     PersonalDTO personal
 ) {}

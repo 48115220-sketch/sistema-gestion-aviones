@@ -1,13 +1,13 @@
-package com.escuela.admin_service;
+package com.terminal.auth;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class AdminServiceApplicationTests {
+class AuthApplicationTests {
 
-	@Test
-	void contextLoads() {
-	}
+    @Test
+    void contextLoads() {
+    }
 
 }

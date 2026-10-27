@@ -44,7 +44,7 @@ public class AvionServiceImpl implements AvionService {
 
     @Override
     public AvionConPersonalDTO obtenerPorId(Integer id) {
-        log.debug("Buscando avión con ID: {}", id);
+        log.debug("Buscando avion con ID: {}", id);
         return avionRepository.findById(id)
                 .map(this::convertirAConPersonalDTO)
                 .orElse(null);
@@ -52,78 +52,82 @@ public class AvionServiceImpl implements AvionService {
 
     @Override
     public AvionConPersonalDTO guardar(AvionAltaDTO altaDTO) {
-        log.info("Creando nuevo avión modelo: {} | Personal ID: {} | Capacidad: {}", altaDTO.modelo(), altaDTO.personalId(), altaDTO.capacidadPersonas());
+        log.info("Creando nuevo avion modelo: {} | Personal ID: {} | Capacidad: {}", altaDTO.modelo(), altaDTO.personalId(), altaDTO.capacidadPersonas());
         Avion avion = new Avion();
         avion.setModelo(altaDTO.modelo());
         avion.setCapacidadPersonas(altaDTO.capacidadPersonas() != null ? altaDTO.capacidadPersonas() : 180);
         avion.setCapacidadEquipaje(altaDTO.capacidadEquipaje() != null ? altaDTO.capacidadEquipaje() : 5000.0f);
         avion.setPersonalId(altaDTO.personalId());
+        avion.setEstado(altaDTO.estado() != null ? altaDTO.estado() : "EN_SERVICIO");
 
         Avion guardado = avionRepository.save(avion);
-        log.info("Avión guardado exitosamente con ID: {}", guardado.getId());
+        log.info("Avion guardado exitosamente con ID: {}", guardado.getId());
         return convertirAConPersonalDTO(guardado);
     }
 
     @Override
     public AvionConPersonalDTO actualizar(Integer id, AvionAltaDTO altaDTO) {
-        log.info("Actualizando avión ID: {}", id);
+        log.info("Actualizando avion ID: {}", id);
         return avionRepository.findById(id)
                 .map(avion -> {
-                    avion.setModelo(altaDTO.modelo());
-                    avion.setPersonalId(altaDTO.personalId());
+                    if (altaDTO.modelo() != null) avion.setModelo(altaDTO.modelo());
+                    if (altaDTO.personalId() != null) avion.setPersonalId(altaDTO.personalId());
                     if (altaDTO.capacidadPersonas() != null) {
                         avion.setCapacidadPersonas(altaDTO.capacidadPersonas());
                     }
                     if (altaDTO.capacidadEquipaje() != null) {
                         avion.setCapacidadEquipaje(altaDTO.capacidadEquipaje());
                     }
+                    if (altaDTO.estado() != null) {
+                        avion.setEstado(altaDTO.estado());
+                    }
                     Avion actualizado = avionRepository.save(avion);
-                    log.info("Avión ID {} actualizado correctamente", id);
+                    log.info("Avion ID {} actualizado correctamente", id);
                     return convertirAConPersonalDTO(actualizado);
                 })
                 .orElseGet(() -> {
-                    log.warn("No se encontró el avión ID {} para actualizar", id);
+                    log.warn("No se encontro el avion ID {} para actualizar", id);
                     return null;
                 });
     }
 
     @Override
     public boolean eliminar(Integer id) {
-        log.info("Iniciando proceso de eliminación para avión ID: {}", id);
+        log.info("Iniciando proceso de eliminacion para avion ID: {}", id);
         if (!avionRepository.existsById(id)) {
-            log.warn("El avión ID {} no existe", id);
+            log.warn("El avion ID {} no existe", id);
             return false;
         }
 
         if (vueloClient != null) {
             try {
                 String token = obtenerTokenActual();
-                log.debug("Consultando vuelos asignados al avión ID {} via VueloClient", id);
+                log.debug("Consultando vuelos asignados al avion ID {} via VueloClient", id);
                 List<VueloDTO> vuelos = vueloClient.obtenerTodosVuelos(token);
                 if (vuelos != null) {
                     boolean tieneVuelos = vuelos.stream()
                             .anyMatch(v -> v.avionId() != null && v.avionId().equals(id));
                     if (tieneVuelos) {
-                        log.warn("No se puede eliminar el avión ID {} porque contiene vuelos asignados", id);
+                        log.warn("No se puede eliminar el avion ID {} porque contiene vuelos asignados", id);
                         throw new ResponseStatusException(
                                 HttpStatus.BAD_REQUEST,
-                                "No se puede eliminar el avión porque tiene vuelos asignados activos."
+                                "No se puede eliminar el avion porque tiene vuelos asignados activos."
                         );
                     }
                 }
             } catch (ResponseStatusException e) {
                 throw e;
             } catch (Exception e) {
-                log.error("Error de comunicación con vuelos-service al validar eliminación del avión ID {}: {}", id, e.getMessage());
+                log.error("Error de comunicacion con vuelos-service al validar eliminacion del avion ID {}: {}", id, e.getMessage());
                 throw new ResponseStatusException(
                         HttpStatus.SERVICE_UNAVAILABLE,
-                        "No se pudo verificar si el avión tiene vuelos asignados. Verifique que vuelos-service esté activo."
+                        "No se pudo verificar si el avion tiene vuelos asignados. Verifique que vuelos-service este activo."
                 );
             }
         }
 
         avionRepository.deleteById(id);
-        log.info("Avión ID {} eliminado de la base de datos", id);
+        log.info("Avion ID {} eliminado de la base de datos", id);
         return true;
     }
 
@@ -132,10 +136,10 @@ public class AvionServiceImpl implements AvionService {
         if (avion.getPersonalId() != null && personalClient != null) {
             try {
                 String token = obtenerTokenActual();
-                log.debug("Consultando información del personal ID {} via PersonalClient", avion.getPersonalId());
+                log.debug("Consultando informacion del personal ID {} via PersonalClient", avion.getPersonalId());
                 personalDTO = personalClient.obtenerPersonalPorId(token, avion.getPersonalId());
             } catch (Exception e) {
-                log.warn("No se pudo obtener la información del personal ID {}: {}", avion.getPersonalId(), e.getMessage());
+                log.warn("No se pudo obtener la informacion del personal ID {}: {}", avion.getPersonalId(), e.getMessage());
             }
         }
         return new AvionConPersonalDTO(
@@ -144,19 +148,16 @@ public class AvionServiceImpl implements AvionService {
                 avion.getCapacidadPersonas(),
                 avion.getCapacidadEquipaje(),
                 avion.getPersonalId(),
+                avion.getEstado() != null ? avion.getEstado() : "EN_SERVICIO",
                 personalDTO
         );
     }
 
     private String obtenerTokenActual() {
-        try {
-            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes != null) {
-                HttpServletRequest request = attributes.getRequest();
-                return request.getHeader("Authorization");
-            }
-        } catch (Exception e) {
-            log.trace("No se pudo obtener el header Authorization de la petición actual", e);
+        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attrs != null) {
+            HttpServletRequest request = attrs.getRequest();
+            return request.getHeader("Authorization");
         }
         return null;
     }

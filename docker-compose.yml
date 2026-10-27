@@ -1,6 +1,45 @@
-version: '3.8'
+﻿version: '3.8'
 
 services:
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC
+    networks:
+      - terminal-network
+
+  config-server:
+    build: ./config-server
+    container_name: config-server
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC -Deureka.client.serviceUrl.defaultZone=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/48115220-sketch/config-server.git
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=main
+    depends_on:
+      - eureka-server
+    networks:
+      - terminal-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - terminal-network
+
   auth-db:
     image: mysql:8.0
     container_name: auth-db
@@ -15,7 +54,7 @@ services:
     volumes:
       - auth_db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -ppsMYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -37,7 +76,7 @@ services:
     volumes:
       - personal_db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -ppsMYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -59,7 +98,7 @@ services:
     volumes:
       - vuelos_db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -ppsMYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
       retries: 20
@@ -81,51 +120,11 @@ services:
     volumes:
       - aviones_db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -ppsMYSQL_ROOT_PASSWORD --silent"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 20s
-    networks:
-      - terminal-network
-
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
-    restart: unless-stopped
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    networks:
-      - terminal-network
-
-  eureka-server:
-    build: ./eureka-server
-    container_name: eureka-server
-    restart: unless-stopped
-    ports:
-      - "8761:8761"
-    environment:
-      - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC
-    networks:
-      - terminal-network
-
-  config-server:
-    build: ./config-server
-    container_name: config-server
-    restart: unless-stopped
-    ports:
-      - "8888:8888"
-    environment:
-      - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=https://github.com/TU_USUARIO/TU_REPOSITORIO_CONFIG.git
-      - SPRING_CLOUD_CONFIG_SERVER_GIT_DEFAULT_LABEL=main
-    depends_on:
-      - eureka-server
     networks:
       - terminal-network
 
@@ -136,12 +135,12 @@ services:
     ports:
       - "8084:8084"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=auth-service
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC -Deureka.client.serviceUrl.defaultZone=http://eureka-server:8761/eureka/ -Dspring.application.name=auth-service
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
-      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://configuser:configpass123@config-server:8888/
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_DATASOURCE_URL=jdbc:mysql://auth-db:3306/auth_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=auth_user
       - SPRING_DATASOURCE_PASSWORD=auth_pass
@@ -164,12 +163,12 @@ services:
     ports:
       - "8083:8083"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=personal-service
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC -Deureka.client.serviceUrl.defaultZone=http://eureka-server:8761/eureka/ -Dspring.application.name=personal-service
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
-      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://configuser:configpass123@config-server:8888/
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_DATASOURCE_URL=jdbc:mysql://personal-db:3306/personal_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=personal_user
@@ -195,12 +194,12 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=vuelos-service
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC -Deureka.client.serviceUrl.defaultZone=http://eureka-server:8761/eureka/ -Dspring.application.name=vuelos-service
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
-      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://configuser:configpass123@config-server:8888/
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_DATASOURCE_URL=jdbc:mysql://vuelos-db:3306/vuelos_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=vuelos_user
@@ -226,12 +225,12 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=aviones-service
+      - JAVA_TOOL_OPTIONS=-Xmx320m -Xms64m -XX:+UseSerialGC -Deureka.client.serviceUrl.defaultZone=http://eureka-server:8761/eureka/ -Dspring.application.name=aviones-service
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
-      - SPRING_CONFIG_IMPORT=configserver:http://configuser:configpass123@config-server:8888/
+      - SPRING_CONFIG_IMPORT=optional:configserver:http://configuser:configpass123@config-server:8888/
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_DATASOURCE_URL=jdbc:mysql://aviones-db:3306/aviones_database?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
       - SPRING_DATASOURCE_USERNAME=aviones_user
@@ -257,12 +256,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC
+      - SPRING_APPLICATION_NAME=gateway-service
+      - JAVA_TOOL_OPTIONS=-Xmx128m -Xms64m -XX:+UseSerialGC -Deureka.client.serviceUrl.defaultZone=http://eureka-server:8761/eureka/ -Dspring.application.name=gateway-service
       - SPRING_CLOUD_CONFIG_USERNAME=configuser
       - SPRING_CLOUD_CONFIG_PASSWORD=configpass123
       - SPRING_CONFIG_IMPORT=optional:configserver:http://configuser:configpass123@config-server:8888/
       - SPRING_CLOUD_CONFIG_URI=http://configuser:configpass123@config-server:8888/
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     depends_on:
       - eureka-server
       - config-server

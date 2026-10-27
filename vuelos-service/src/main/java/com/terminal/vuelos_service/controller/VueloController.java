@@ -21,16 +21,16 @@ public class VueloController {
     private VueloService vueloService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'DOCENTE', 'PRECEPTOR', 'DIRECTOR', 'PILOTO', 'AZAFATA')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public List<VueloConAvionDTO> listarTodos() {
-        log.info("Petición GET recibida en /vuelos");
+        log.info("Peticion GET recibida en /vuelos");
         return vueloService.obtenerTodos();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'DOCENTE', 'PRECEPTOR', 'DIRECTOR', 'PILOTO', 'AZAFATA')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public ResponseEntity<VueloConAvionDTO> obtenerPorId(@PathVariable Integer id) {
-        log.info("Petición GET recibida en /vuelos/{}", id);
+        log.info("Peticion GET recibida en /vuelos/{}", id);
         VueloConAvionDTO vuelo = vueloService.obtenerPorId(id);
         if (vuelo != null) {
             return ResponseEntity.ok(vuelo);
@@ -40,25 +40,25 @@ public class VueloController {
     }
 
     @GetMapping("/avion/{avionId}")
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'DOCENTE', 'PRECEPTOR', 'DIRECTOR', 'PILOTO', 'AZAFATA')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public ResponseEntity<List<VueloConAvionDTO>> obtenerPorAvion(@PathVariable Integer avionId) {
-        log.info("Petición GET recibida en /vuelos/avion/{}", avionId);
+        log.info("Peticion GET recibida en /vuelos/avion/{}", avionId);
         return ResponseEntity.ok(vueloService.obtenerPorAvion(avionId));
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ROOT', 'PRECEPTOR', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<VueloConAvionDTO> crear(@RequestBody VueloAltaDTO altaDTO) {
-        log.info("Petición POST recibida para crear número de vuelo: {}", altaDTO.numeroVuelo());
+        log.info("Peticion POST recibida para crear numero de vuelo: {}", altaDTO.numeroVuelo());
         VueloConAvionDTO creado = vueloService.guardar(altaDTO);
-        log.info("Vuelo registrado con éxito. ID asignado: {}", creado.id());
+        log.info("Vuelo registrado con exito. ID asignado: {}", creado.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROOT', 'PRECEPTOR', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<VueloConAvionDTO> actualizar(@PathVariable Integer id, @RequestBody VueloAltaDTO altaDTO) {
-        log.info("Petición PUT recibida para actualizar vuelo ID: {}", id);
+        log.info("Peticion PUT recibida para actualizar vuelo ID: {}", id);
         VueloConAvionDTO actualizado = vueloService.actualizar(id, altaDTO);
         if (actualizado != null) {
             log.info("Vuelo ID {} actualizado exitosamente", id);
@@ -69,11 +69,11 @@ public class VueloController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROOT', 'PRECEPTOR', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        log.info("Petición DELETE recibida para cancelar vuelo ID: {}", id);
+        log.info("Peticion DELETE recibida para cancelar vuelo ID: {}", id);
         if (vueloService.eliminar(id)) {
-            log.info("Vuelo ID {} cancelado con éxito", id);
+            log.info("Vuelo ID {} cancelado con exito", id);
             return ResponseEntity.noContent().build();
         }
         log.warn("No se pudo cancelar, vuelo ID {} no encontrado", id);

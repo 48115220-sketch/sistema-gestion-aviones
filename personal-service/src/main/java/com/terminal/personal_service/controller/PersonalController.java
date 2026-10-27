@@ -21,16 +21,16 @@ public class PersonalController {
     private PersonalService personalService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'PRECEPTOR', 'DIRECTOR', 'DOCENTE', 'PILOTO', 'AZAFATA')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public List<PersonalDTO> listarTodos() {
-        log.info("Petición GET recibida en /admin/personal");
+        log.info("Peticion GET recibida en /admin/personal");
         return personalService.obtenerTodos();
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO', 'PRECEPTOR', 'DIRECTOR', 'DOCENTE', 'PILOTO', 'AZAFATA')")
+    @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public ResponseEntity<PersonalDTO> obtenerPorId(@PathVariable Integer id) {
-        log.info("Petición GET recibida en /admin/personal/{}", id);
+        log.info("Peticion GET recibida en /admin/personal/{}", id);
         PersonalDTO personal = personalService.obtenerPorId(id);
         if (personal == null) {
             log.warn("Personal de vuelo con ID {} no encontrado", id);
@@ -40,18 +40,18 @@ public class PersonalController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<PersonalDTO> crear(@RequestBody PersonalAltaDTO altaDTO) {
-        log.info("Petición POST recibida para crear personal DNI: {}", altaDTO.dni());
+        log.info("Peticion POST recibida para crear personal DNI: {}", altaDTO.dni());
         PersonalDTO creado = personalService.guardar(altaDTO);
         log.info("Personal de vuelo creado exitosamente con ID: {}", creado.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ROOT', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<PersonalDTO> actualizar(@PathVariable Integer id, @RequestBody PersonalAltaDTO altaDTO) {
-        log.info("Petición PUT recibida para actualizar personal ID: {}", id);
+        log.info("Peticion PUT recibida para actualizar personal ID: {}", id);
         PersonalDTO actualizado = personalService.actualizar(id, altaDTO);
         if (actualizado == null) {
             log.warn("No se pudo actualizar, personal con ID {} no encontrado", id);
@@ -64,7 +64,7 @@ public class PersonalController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
-        log.info("Petición DELETE recibida para eliminar personal ID: {}", id);
+        log.info("Peticion DELETE recibida para eliminar personal ID: {}", id);
         if (personalService.eliminar(id)) {
             log.info("Personal ID {} eliminado exitosamente", id);
             return ResponseEntity.noContent().build();

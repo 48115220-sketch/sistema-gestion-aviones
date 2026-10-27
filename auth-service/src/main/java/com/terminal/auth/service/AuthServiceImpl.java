@@ -37,7 +37,7 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalArgumentException("El nombre de usuario ya existe");
         }
 
-        String rolFinal = request.rol() != null ? request.rol().toUpperCase() : "DOCENTE";
+        String rolFinal = request.rol() != null ? request.rol().toUpperCase() : "AZAFATA";
 
         Usuario usuario = Usuario.builder()
                 .nombreUsuario(request.nombreUsuario())
@@ -62,21 +62,21 @@ public class AuthServiceImpl implements AuthService {
         Usuario usuario = usuarioRepository.findByNombreUsuario(request.nombreUsuario()).orElse(null);
 
         if (usuario == null || usuario.getClave() == null || !passwordEncoder.matches(request.clave(), usuario.getClave())) {
-            log.warn("Credenciales inválidas para usuario: {}", request.nombreUsuario());
+            log.warn("Credenciales invÃ¡lidas para usuario: {}", request.nombreUsuario());
             throw new IllegalArgumentException("Credenciales invalidas");
         }
 
         String jwtToken = jwtService.generarToken(usuario.getNombreUsuario(), usuario.getRol());
         RefreshToken refreshToken = refreshTokenService.crearRefreshToken(usuario.getNombreUsuario());
 
-        log.info("Autenticación y generación de tokens completada para usuario: {}", usuario.getNombreUsuario());
+        log.info("AutenticaciÃ³n y generaciÃ³n de tokens completada para usuario: {}", usuario.getNombreUsuario());
         return new LoginResponse(jwtToken, refreshToken.getToken(), usuario.getNombreUsuario());
     }
 
     @Override
     public LoginResponse refreshToken(RefreshTokenRequest request) {
         if (request == null || request.refreshToken() == null) {
-            log.warn("Solicitud de Refresh Token vacía o inválida");
+            log.warn("Solicitud de Refresh Token vacÃ­a o invÃ¡lida");
             throw new IllegalArgumentException("Refresh Token no valido");
         }
 
