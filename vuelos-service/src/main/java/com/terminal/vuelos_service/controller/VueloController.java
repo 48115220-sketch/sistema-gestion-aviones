@@ -31,17 +31,12 @@ public class VueloController {
     @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public ResponseEntity<VueloConAvionDTO> obtenerPorId(@PathVariable Integer id) {
         log.info("Peticion GET recibida en /vuelos/{}", id);
-        VueloConAvionDTO vuelo = vueloService.obtenerPorId(id);
-        if (vuelo != null) {
-            return ResponseEntity.ok(vuelo);
-        }
-        log.warn("Vuelo con ID {} no encontrado", id);
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(vueloService.obtenerPorId(id));
     }
 
     @GetMapping("/avion/{avionId}")
     @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
-    public ResponseEntity<List<VueloConAvionDTO>> obtenerPorAvion(@PathVariable Integer avionId) {
+    public ResponseEntity<List<VueloConAvionDTO>> obtenerPorAvion(@PathVariable Integer avionId){
         log.info("Peticion GET recibida en /vuelos/avion/{}", avionId);
         return ResponseEntity.ok(vueloService.obtenerPorAvion(avionId));
     }
@@ -60,23 +55,16 @@ public class VueloController {
     public ResponseEntity<VueloConAvionDTO> actualizar(@PathVariable Integer id, @RequestBody VueloAltaDTO altaDTO) {
         log.info("Peticion PUT recibida para actualizar vuelo ID: {}", id);
         VueloConAvionDTO actualizado = vueloService.actualizar(id, altaDTO);
-        if (actualizado != null) {
-            log.info("Vuelo ID {} actualizado exitosamente", id);
-            return ResponseEntity.ok(actualizado);
-        }
-        log.warn("No se pudo actualizar, vuelo ID {} no encontrado", id);
-        return ResponseEntity.notFound().build();
+        log.info("Vuelo ID {} actualizado exitosamente", id);
+        return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         log.info("Peticion DELETE recibida para cancelar vuelo ID: {}", id);
-        if (vueloService.eliminar(id)) {
-            log.info("Vuelo ID {} cancelado con exito", id);
-            return ResponseEntity.noContent().build();
-        }
-        log.warn("No se pudo cancelar, vuelo ID {} no encontrado", id);
-        return ResponseEntity.notFound().build();
+        vueloService.eliminar(id);
+        log.info("Vuelo ID {} cancelado con exito", id);
+        return ResponseEntity.noContent().build();
     }
 }

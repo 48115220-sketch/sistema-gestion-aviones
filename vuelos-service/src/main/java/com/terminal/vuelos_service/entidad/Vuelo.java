@@ -10,7 +10,9 @@ public class Vuelo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
+    @Column(nullable = false, unique = true)
     private String numeroVuelo;
+
     private String origen;
     private String destino;
     private String horaSalida;

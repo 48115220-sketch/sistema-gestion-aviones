@@ -9,10 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
-import java.util.Map;
 
 @Log4j2
 @RestController
@@ -33,12 +31,7 @@ public class AvionController {
     @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public ResponseEntity<AvionConPersonalDTO> obtenerPorId(@PathVariable Integer id) {
         log.info("Peticion GET recibida en /aviones/{}", id);
-        AvionConPersonalDTO avion = avionService.obtenerPorId(id);
-        if (avion == null) {
-            log.warn("Avion con ID {} no encontrado", id);
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(avion);
+        return ResponseEntity.ok(avionService.obtenerPorId(id));
     }
 
     @PostMapping
@@ -55,28 +48,16 @@ public class AvionController {
     public ResponseEntity<AvionConPersonalDTO> actualizar(@PathVariable Integer id, @RequestBody AvionAltaDTO altaDTO) {
         log.info("Peticion PUT recibida para actualizar avion ID: {}", id);
         AvionConPersonalDTO actualizado = avionService.actualizar(id, altaDTO);
-        if (actualizado == null) {
-            log.warn("No se pudo actualizar, avion ID {} no encontrado", id);
-            return ResponseEntity.notFound().build();
-        }
         log.info("Avion ID {} actualizado con exito", id);
         return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ROOT')")
-    public ResponseEntity<?> eliminar(@PathVariable Integer id) {
+    public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         log.info("Peticion DELETE recibida para eliminar avion ID: {}", id);
-        try {
-            if (avionService.eliminar(id)) {
-                log.info("Avion ID {} eliminado exitosamente", id);
-                return ResponseEntity.noContent().build();
-            }
-            log.warn("No se pudo eliminar, avion ID {} no encontrado", id);
-            return ResponseEntity.notFound().build();
-        } catch (ResponseStatusException e) {
-            log.warn("Validacion fallida al eliminar avion ID {}: {}", id, e.getReason());
-            return ResponseEntity.status(e.getStatusCode()).body(Map.of("message", e.getReason()));
-        }
+        avionService.eliminar(id);
+        log.info("Avion ID {} eliminado exitosamente", id);
+        return ResponseEntity.noContent().build();
     }
 }

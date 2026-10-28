@@ -31,12 +31,7 @@ public class PersonalController {
     @PreAuthorize("hasAnyRole('ROOT', 'PILOTO', 'AZAFATA', 'ADMINISTRATIVO')")
     public ResponseEntity<PersonalDTO> obtenerPorId(@PathVariable Integer id) {
         log.info("Peticion GET recibida en /admin/personal/{}", id);
-        PersonalDTO personal = personalService.obtenerPorId(id);
-        if (personal == null) {
-            log.warn("Personal de vuelo con ID {} no encontrado", id);
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(personal);
+        return ResponseEntity.ok(personalService.obtenerPorId(id));
     }
 
     @PostMapping
@@ -44,7 +39,6 @@ public class PersonalController {
     public ResponseEntity<PersonalDTO> crear(@RequestBody PersonalAltaDTO altaDTO) {
         log.info("Peticion POST recibida para crear personal DNI: {}", altaDTO.dni());
         PersonalDTO creado = personalService.guardar(altaDTO);
-        log.info("Personal de vuelo creado exitosamente con ID: {}", creado.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(creado);
     }
 
@@ -53,11 +47,6 @@ public class PersonalController {
     public ResponseEntity<PersonalDTO> actualizar(@PathVariable Integer id, @RequestBody PersonalAltaDTO altaDTO) {
         log.info("Peticion PUT recibida para actualizar personal ID: {}", id);
         PersonalDTO actualizado = personalService.actualizar(id, altaDTO);
-        if (actualizado == null) {
-            log.warn("No se pudo actualizar, personal con ID {} no encontrado", id);
-            return ResponseEntity.notFound().build();
-        }
-        log.info("Personal ID {} actualizado exitosamente", id);
         return ResponseEntity.ok(actualizado);
     }
 
@@ -65,11 +54,7 @@ public class PersonalController {
     @PreAuthorize("hasRole('ROOT')")
     public ResponseEntity<Void> eliminar(@PathVariable Integer id) {
         log.info("Peticion DELETE recibida para eliminar personal ID: {}", id);
-        if (personalService.eliminar(id)) {
-            log.info("Personal ID {} eliminado exitosamente", id);
-            return ResponseEntity.noContent().build();
-        }
-        log.warn("No se pudo eliminar, personal con ID {} no encontrado", id);
-        return ResponseEntity.notFound().build();
+        personalService.eliminar(id);
+        return ResponseEntity.noContent().build();
     }
 }

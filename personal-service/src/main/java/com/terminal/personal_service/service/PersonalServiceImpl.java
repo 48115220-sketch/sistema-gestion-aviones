@@ -3,6 +3,7 @@ package com.terminal.personal_service.service;
 import com.terminal.personal_service.dto.PersonalAltaDTO;
 import com.terminal.personal_service.dto.PersonalDTO;
 import com.terminal.personal_service.entidad.Personal;
+import com.terminal.personal_service.exception.ResourceNotFoundException;
 import com.terminal.personal_service.repository.PersonalRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,12 +33,17 @@ public class PersonalServiceImpl implements PersonalService {
         log.debug("Buscando personal de vuelo por ID: {}", id);
         return personalRepository.findById(id)
                 .map(this::convertirADTO)
-                .orElse(null);
+                .orElseThrow(() -> new ResourceNotFoundException("Personal de vuelo con ID " + id + " no encontrado."));
     }
 
     @Override
     public PersonalDTO guardar(PersonalAltaDTO altaDTO) {
         log.info("Guardando nuevo personal de vuelo: {} {}", altaDTO.nombre(), altaDTO.apellido());
+        
+        if (altaDTO.dni() != null && personalRepository.existsByDni(altaDTO.dni())) {
+            throw new IllegalArgumentException("El DNI " + altaDTO.dni() + " ya se encuentra registrado.");
+        }
+
         Personal personal = new Personal();
         personal.setNombre(altaDTO.nombre());
         personal.setApellido(altaDTO.apellido());
@@ -54,34 +60,35 @@ public class PersonalServiceImpl implements PersonalService {
     @Override
     public PersonalDTO actualizar(Integer id, PersonalAltaDTO altaDTO) {
         log.info("Actualizando personal con ID: {}", id);
-        return personalRepository.findById(id)
-                .map(personal -> {
-                    personal.setNombre(altaDTO.nombre());
-                    personal.setApellido(altaDTO.apellido());
-                    personal.setDni(altaDTO.dni());
-                    personal.setSueldo(altaDTO.sueldo());
-                    personal.setCargo(altaDTO.cargo());
-                    personal.setTipo(altaDTO.tipo());
-                    Personal actualizado = personalRepository.save(personal);
-                    log.info("Personal ID {} actualizado con éxito", id);
-                    return convertirADTO(actualizado);
-                })
-                .orElseGet(() -> {
-                    log.warn("No se encontró el personal ID {} para actualizar", id);
-                    return null;
-                });
+        
+        Personal personal = personalRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Personal de vuelo con ID " + id + " no encontrado."));
+
+        if (altaDTO.dni() != null && personalRepository.existsByDniAndIdNot(altaDTO.dni(), id)) {
+            throw new IllegalArgumentException("El DNI " + altaDTO.dni() + " ya pertenece a otro personal de vuelo.");
+        }
+
+        personal.setNombre(altaDTO.nombre());
+        personal.setApellido(altaDTO.apellido());
+        personal.setDni(altaDTO.dni());
+        personal.setSueldo(altaDTO.sueldo());
+        personal.setCargo(altaDTO.cargo());
+        personal.setTipo(altaDTO.tipo());
+
+        Personal actualizado = personalRepository.save(personal);
+        log.info("Personal ID {} actualizado con éxito", id);
+        return convertirADTO(actualizado);
     }
 
     @Override
     public boolean eliminar(Integer id) {
         log.info("Eliminando personal con ID: {}", id);
-        if (personalRepository.existsById(id)) {
-            personalRepository.deleteById(id);
-            log.info("Personal ID {} eliminado correctamente", id);
-            return true;
+        if (!personalRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Personal de vuelo con ID " + id + " no encontrado.");
         }
-        log.warn("No se encontró el personal ID {} para eliminar", id);
-        return false;
+        personalRepository.deleteById(id);
+        log.info("Personal ID {} eliminado correctamente", id);
+        return true;
     }
 
     private PersonalDTO convertirADTO(Personal personal) {

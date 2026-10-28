@@ -6,6 +6,7 @@ import com.terminal.vuelos_service.dto.VueloConAvionDTO;
 import com.terminal.vuelos_service.entidad.Vuelo;
 import com.terminal.vuelos_service.event.VueloEvent;
 import com.terminal.vuelos_service.event.VueloEstadoEvent;
+import com.terminal.vuelos_service.exception.ResourceNotFoundException;
 import com.terminal.vuelos_service.repository.VueloRepository;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -19,30 +20,47 @@ import java.util.stream.Collectors;
 @Service
 public class VueloServiceImpl implements VueloService {
 
-    @Autowired private VueloRepository vueloRepository;
-    @Autowired(required = false) private RabbitTemplate rabbitTemplate;
+    @Autowired
+    private VueloRepository vueloRepository;
+
+    @Autowired(required = false)
+    private RabbitTemplate rabbitTemplate;
 
     @Override 
     public List<VueloConAvionDTO> obtenerTodos() { 
         log.debug("Obteniendo todos los vuelos registrados");
-        return vueloRepository.findAll().stream().map(this::convertirAConAvionDTO).collect(Collectors.toList()); 
+        return vueloRepository.findAll().stream()
+                .map(this::convertirAConAvionDTO)
+                .collect(Collectors.toList()); 
     }
     
     @Override 
     public VueloConAvionDTO obtenerPorId(Integer id) { 
         log.debug("Buscando vuelo con ID: {}", id);
-        return vueloRepository.findById(id).map(this::convertirAConAvionDTO).orElse(null); 
+        return vueloRepository.findById(id)
+                .map(this::convertirAConAvionDTO)
+                .orElseThrow(() -> new ResourceNotFoundException("Vuelo con ID " + id + " no encontrado.")); 
     }
     
     @Override 
     public List<VueloConAvionDTO> obtenerPorAvion(Integer avionId) {
         log.debug("Buscando vuelos programados para el avion ID: {}", avionId);
-        return vueloRepository.findByAvionIdAndEstado(avionId, "PROGRAMADO").stream().map(this::convertirAConAvionDTO).collect(Collectors.toList());
+        return vueloRepository.findByAvionIdAndEstado(avionId, "PROGRAMADO").stream()
+                .map(this::convertirAConAvionDTO)
+                .collect(Collectors.toList());
     }
 
     @Override 
     public VueloConAvionDTO guardar(VueloAltaDTO altaDTO) {
         log.info("Guardando nuevo vuelo N°: {} | Origen: {} | Destino: {}", altaDTO.numeroVuelo(), altaDTO.origen(), altaDTO.destino());
+
+        if (altaDTO.numeroVuelo() == null || altaDTO.numeroVuelo().trim().isEmpty()) {
+            throw new IllegalArgumentException("El numero de vuelo es obligatorio.");
+        }
+        if (vueloRepository.existsByNumeroVuelo(altaDTO.numeroVuelo())) {
+            throw new IllegalArgumentException("El numero de vuelo " + altaDTO.numeroVuelo() + " ya se encuentra registrado.");
+        }
+
         Vuelo vuelo = new Vuelo(); 
         vuelo.setNumeroVuelo(altaDTO.numeroVuelo()); 
         vuelo.setOrigen(altaDTO.origen()); 
@@ -51,113 +69,96 @@ public class VueloServiceImpl implements VueloService {
         vuelo.setHoraLlegada(altaDTO.horaLlegada()); 
         vuelo.setAvionId(altaDTO.avionId()); 
         vuelo.setEstado(altaDTO.estado() != null && !altaDTO.estado().trim().isEmpty() ? altaDTO.estado() : "PROGRAMADO");
-        
+
         Vuelo guardado = vueloRepository.save(vuelo);
-        log.info("Vuelo guardado con exito. ID: {}", guardado.getId());
-        
-        if (rabbitTemplate != null) {
-            if (guardado.getAvionId() != null) {
-                try { 
-                    log.info("Notificando alta de vuelo a RabbitMQ (vuelo.alta.queue) | Vuelo ID: {}, Avion ID: {}", guardado.getId(), guardado.getAvionId());
-                    rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_ALTA, 
-                            new VueloEvent(guardado.getId().longValue(), guardado.getAvionId().longValue())); 
-                } catch (Exception e) {
-                    log.error("Error al enviar evento vuelo.alta.queue: {}", e.getMessage(), e);
-                }
-            }
+
+        if (rabbitTemplate != null && guardado.getAvionId() != null) {
             try {
-                log.info("Notificando estado de vuelo a RabbitMQ (vuelo.estado.queue) | Vuelo ID: {}, Estado: {}", guardado.getId(), guardado.getEstado());
-                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_ESTADO, 
-                        new VueloEstadoEvent(guardado.getId().longValue(), guardado.getEstado()));
+                VueloEvent evento = new VueloEvent(guardado.getId().longValue(), guardado.getAvionId().longValue());
+                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_ALTA, evento);
+                log.info("Evento de alta de vuelo enviado a RabbitMQ para avion ID: {}", guardado.getAvionId());
             } catch (Exception e) {
-                log.error("Error al enviar evento vuelo.estado.queue: {}", e.getMessage(), e);
+                log.warn("No se pudo publicar evento RabbitMQ de alta vuelo: {}", e.getMessage());
             }
         }
+
         return convertirAConAvionDTO(guardado);
     }
 
-    @Override 
+    @Override
     public VueloConAvionDTO actualizar(Integer id, VueloAltaDTO altaDTO) {
         log.info("Actualizando vuelo con ID: {}", id);
-        return vueloRepository.findById(id).map(vuelo -> {
-            if (altaDTO.numeroVuelo() != null) vuelo.setNumeroVuelo(altaDTO.numeroVuelo()); 
-            if (altaDTO.origen() != null) vuelo.setOrigen(altaDTO.origen()); 
-            if (altaDTO.destino() != null) vuelo.setDestino(altaDTO.destino()); 
-            if (altaDTO.horaSalida() != null) vuelo.setHoraSalida(altaDTO.horaSalida()); 
-            if (altaDTO.horaLlegada() != null) vuelo.setHoraLlegada(altaDTO.horaLlegada()); 
-            if (altaDTO.avionId() != null) vuelo.setAvionId(altaDTO.avionId());
-            
-            if (altaDTO.estado() != null && !altaDTO.estado().trim().isEmpty()) {
-                vuelo.setEstado(altaDTO.estado());
-            }
-            Vuelo guardado = vueloRepository.save(vuelo);
-            log.info("Vuelo ID {} actualizado exitosamente", id);
 
-            if (rabbitTemplate != null) {
-                try {
-                    log.info("Notificando cambio de estado de vuelo a RabbitMQ (vuelo.estado.queue) | Vuelo ID: {}, Estado: {}", guardado.getId(), guardado.getEstado());
-                    rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_ESTADO, 
-                            new VueloEstadoEvent(guardado.getId().longValue(), guardado.getEstado()));
-                } catch (Exception e) {
-                    log.error("Error al enviar evento vuelo.estado.queue: {}", e.getMessage(), e);
-                }
-            }
+        Vuelo vuelo = vueloRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vuelo con ID " + id + " no encontrado."));
 
-            return convertirAConAvionDTO(guardado);
-        }).orElseGet(() -> {
-            log.warn("No se encontro el vuelo ID {} para actualizar", id);
-            return null;
-        });
+        if (altaDTO.numeroVuelo() == null || altaDTO.numeroVuelo().trim().isEmpty()) {
+            throw new IllegalArgumentException("El numero de vuelo es obligatorio.");
+        }
+        if (vueloRepository.existsByNumeroVueloAndIdNot(altaDTO.numeroVuelo(), id)) {
+            throw new IllegalArgumentException("El numero de vuelo " + altaDTO.numeroVuelo() + " ya pertenece a otro vuelo.");
+        }
+
+        String estadoAnterior = vuelo.getEstado();
+
+        vuelo.setNumeroVuelo(altaDTO.numeroVuelo());
+        vuelo.setOrigen(altaDTO.origen());
+        vuelo.setDestino(altaDTO.destino());
+        vuelo.setHoraSalida(altaDTO.horaSalida());
+        vuelo.setHoraLlegada(altaDTO.horaLlegada());
+        vuelo.setAvionId(altaDTO.avionId());
+        if (altaDTO.estado() != null) {
+            vuelo.setEstado(altaDTO.estado());
+        }
+
+        Vuelo actualizado = vueloRepository.save(vuelo);
+
+        if (rabbitTemplate != null && !estadoAnterior.equalsIgnoreCase(actualizado.getEstado())) {
+            try {
+                VueloEstadoEvent estadoEvent = new VueloEstadoEvent(actualizado.getId().longValue(), actualizado.getEstado());
+                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_ESTADO, estadoEvent);
+                log.info("Evento cambio estado de vuelo enviado a RabbitMQ: {}", actualizado.getEstado());
+            } catch (Exception e) {
+                log.warn("No se pudo publicar evento RabbitMQ de estado vuelo: {}", e.getMessage());
+            }
+        }
+
+        return convertirAConAvionDTO(actualizado);
     }
 
-    @Override 
+    @Override
     public boolean eliminar(Integer id) {
-        log.info("Procesando cancelacion de vuelo ID: {}", id);
-        return vueloRepository.findById(id).map(vuelo -> { 
-            Integer avionAnteriorId = vuelo.getAvionId();
+        log.info("Cancelando/eliminando vuelo ID: {}", id);
 
-            vuelo.setEstado("CANCELADO"); 
-            vuelo.setAvionId(null); 
-            vueloRepository.save(vuelo); 
-            log.info("Vuelo ID {} marcado como CANCELADO", id);
+        Vuelo vuelo = vueloRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Vuelo con ID " + id + " no encontrado."));
 
-            if (rabbitTemplate != null) {
-                if (avionAnteriorId != null) {
-                    try {
-                        log.info("Notificando baja de vuelo a RabbitMQ (vuelo.baja.queue) | Vuelo ID: {}, Avion Anterior ID: {}", vuelo.getId(), avionAnteriorId);
-                        rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_BAJA, 
-                                new VueloEvent(vuelo.getId().longValue(), avionAnteriorId.longValue()));
-                    } catch (Exception e) {
-                        log.error("Error al enviar evento vuelo.baja.queue: {}", e.getMessage(), e);
-                    }
-                }
-                try {
-                    log.info("Notificando cambio de estado de cancelacion a RabbitMQ (vuelo.estado.queue) | Vuelo ID: {}", vuelo.getId());
-                    rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_ESTADO, 
-                            new VueloEstadoEvent(vuelo.getId().longValue(), "CANCELADO"));
-                } catch (Exception e) {
-                    log.error("Error al enviar evento vuelo.estado.queue: {}", e.getMessage(), e);
-                }
+        vueloRepository.delete(vuelo);
+
+        if (rabbitTemplate != null && vuelo.getAvionId() != null) {
+            try {
+                VueloEvent evento = new VueloEvent(vuelo.getId().longValue(), vuelo.getAvionId().longValue());
+                rabbitTemplate.convertAndSend(RabbitMQConfig.QUEUE_VUELO_BAJA, evento);
+                log.info("Evento de baja de vuelo enviado a RabbitMQ para avion ID: {}", vuelo.getAvionId());
+            } catch (Exception e) {
+                log.warn("No se pudo publicar evento RabbitMQ de baja vuelo: {}", e.getMessage());
             }
+        }
 
-            return true; 
-        }).orElseGet(() -> {
-            log.warn("No se encontro el vuelo ID {} para cancelar", id);
-            return false;
-        });
+        return true;
     }
 
     private VueloConAvionDTO convertirAConAvionDTO(Vuelo vuelo) {
         return new VueloConAvionDTO(
-            vuelo.getId(),
-            vuelo.getNumeroVuelo(),
-            vuelo.getOrigen(),
-            vuelo.getDestino(),
-            vuelo.getHoraSalida(),
-            vuelo.getHoraLlegada(),
-            vuelo.getAvionId(),
-            vuelo.getEstado(),
-            null
+                vuelo.getId(),
+                vuelo.getNumeroVuelo(),
+                vuelo.getOrigen(),
+                vuelo.getDestino(),
+                vuelo.getHoraSalida(),
+                vuelo.getHoraLlegada(),
+                vuelo.getAvionId(),
+                vuelo.getEstado(),
+                null
         );
     }
 }

@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface VueloRepository extends JpaRepository<Vuelo, Integer> {
     List<Vuelo> findByAvionIdAndEstado(Integer avionId, String estado);
+    boolean existsByNumeroVuelo(String numeroVuelo);
+    boolean existsByNumeroVueloAndIdNot(String numeroVuelo, Integer id);
 }

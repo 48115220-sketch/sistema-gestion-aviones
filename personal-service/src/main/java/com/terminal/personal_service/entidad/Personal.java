@@ -12,7 +12,10 @@ public class Personal {
 
     private String nombre;
     private String apellido;
+
+    @Column(nullable = false, unique = true)
     private String dni;
+
     private Float sueldo;
     private String cargo;
 
